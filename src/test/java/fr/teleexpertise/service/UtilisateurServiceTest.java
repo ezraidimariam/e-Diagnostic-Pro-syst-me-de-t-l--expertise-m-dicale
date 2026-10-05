@@ -5,10 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import fr.teleexpertise.dao.UtilisateurDao;
 import fr.teleexpertise.entity.Utilisateur;
 
+@DataJpaTest
 class UtilisateurServiceTest {
+
+    @Autowired
+    private UtilisateurDao utilisateurDao;
 
     @Test
     void authentifier_should_return_user_when_credentials_are_valid() {
@@ -16,8 +23,9 @@ class UtilisateurServiceTest {
         utilisateur.setUsername("formatrice");
         utilisateur.setPassword("1234");
         utilisateur.setRole("FORMATRICE");
+        utilisateurDao.save(utilisateur);
 
-        UtilisateurService service = new UtilisateurService(new StubUtilisateurDao(utilisateur));
+        UtilisateurService service = new UtilisateurService(utilisateurDao);
 
         Utilisateur result = service.authentifier("formatrice", "1234");
 
@@ -31,8 +39,9 @@ class UtilisateurServiceTest {
         utilisateur.setUsername("formatrice");
         utilisateur.setPassword("1234");
         utilisateur.setRole("FORMATRICE");
+        utilisateurDao.save(utilisateur);
 
-        UtilisateurService service = new UtilisateurService(new StubUtilisateurDao(utilisateur));
+        UtilisateurService service = new UtilisateurService(utilisateurDao);
 
         assertThrows(IllegalArgumentException.class, () -> service.authentifier("formatrice", "wrong-password"));
     }
