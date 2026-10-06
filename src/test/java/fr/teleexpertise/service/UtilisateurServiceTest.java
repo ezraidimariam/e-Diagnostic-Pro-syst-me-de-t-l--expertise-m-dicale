@@ -7,11 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 
+import fr.teleexpertise.TeleexpertiseApplication;
 import fr.teleexpertise.dao.UtilisateurDao;
 import fr.teleexpertise.entity.Utilisateur;
 
 @DataJpaTest
+@Import(TeleexpertiseApplication.class)
 class UtilisateurServiceTest {
 
     @Autowired
