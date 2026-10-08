@@ -8,5 +8,7 @@ import fr.teleexpertise.entity.Admission;
 
 public interface AdmissionDao extends JpaRepository<Admission, Long> {
 
-	List<Admission> findByStatutOrderByDateHeureAsc(String statut);
+    List<Admission> findAllByOrderByDateHeureAsc();
+
+    List<Admission> findByStatutOrderByDateHeureAsc(String statut);
 }

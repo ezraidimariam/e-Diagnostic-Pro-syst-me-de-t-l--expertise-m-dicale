@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Téléexpertise médicale</title>
+    <style>
+        :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, sans-serif; color: #172b4d; background: #f3f6fb; }
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 5vw; background: #123b67; color: #fff; }
+        main { width: min(1120px, 92vw); margin: 2rem auto; }
+        h1 { font-size: 1.35rem; margin: 0; }
+        h2 { margin-top: 0; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 5px 24px #18365b12; padding: 1.4rem; margin-bottom: 1rem; }
+        .auth { max-width: 460px; margin: 8vh auto; }
+        .tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        button, input, select, textarea { font: inherit; }
+        button { border: 0; border-radius: 7px; padding: .65rem .9rem; background: #1769aa; color: #fff; cursor: pointer; }
+        button.secondary { background: #e7eef6; color: #173b60; }
+        button.danger { background: #a63333; }
+        input, select, textarea { width: 100%; border: 1px solid #cbd6e2; border-radius: 7px; padding: .65rem; background: #fff; }
+        label { display: grid; gap: .35rem; font-size: .9rem; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .85rem; }
+        form button { align-self: end; }
+        .wide { grid-column: 1 / -1; }
+        .muted { color: #5c6e82; }
+        .message { min-height: 1.5rem; margin: .8rem 0; }
+        .error { color: #a32222; }
+        pre { white-space: pre-wrap; word-break: break-word; max-height: 370px; overflow: auto; background: #f7f9fc; border-radius: 8px; padding: 1rem; }
+        .hidden { display: none !important; }
+        @media (max-width: 600px) { header { align-items: flex-start; } main { margin-top: 1rem; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Téléexpertise médicale</h1>
+        <div id="account" class="hidden">
+            <span id="userName"></span>
+            <button id="logout" class="secondary" type="button">Déconnexion</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="auth" class="card auth">
+            <h2 id="authTitle">Connexion</h2>
+            <p id="authHelp" class="muted"></p>
+            <form id="authForm">
+                <label class="setup-only hidden">Nom<input name="nom" autocomplete="family-name"></label>
+                <label class="setup-only hidden">Prénom<input name="prenom" autocomplete="given-name"></label>
+                <label>Nom d'utilisateur<input name="username" required autocomplete="username"></label>
+                <label>Mot de passe<input name="password" type="password" minlength="8" required autocomplete="current-password"></label>
+                <button id="authSubmit" class="wide">Se connecter</button>
+            </form>
+            <p id="authMessage" class="message" role="status"></p>
+        </section>
+
+        <section id="app" class="hidden">
+            <nav class="tabs" aria-label="Sections">
+                <button data-panel="patients">Patients</button>
+                <button data-panel="medecins">Médecins</button>
+                <button data-panel="consultations">Consultations</button>
+                <button data-panel="creneaux">Créneaux</button>
+                <button data-panel="admissions">Admissions</button>
+                <button data-panel="expertises">Demandes d'expertise (<span id="expertiseCount">0</span>)</button>
+                <button data-panel="users" id="usersTab" class="hidden">Comptes</button>
+            </nav>
+
+            <section class="card module" id="patients">
+                <h2>Patients</h2>
+                <form data-endpoint="/api/patients">
+                    <label>Nom<input name="nom" required></label>
+                    <label>Prénom<input name="prenom" required></label>
+                    <label>Téléphone<input name="telephone"></label>
+                    <label>Adresse<input name="adresse"></label>
+                    <label>N° sécurité sociale<input name="numeroSecuriteSociale"></label>
+                    <label>Mutuelle<input name="mutuelle"></label>
+                    <label>Antécédents<textarea name="antecedents"></textarea></label>
+                    <label>Allergies<textarea name="allergies"></textarea></label>
+                    <label class="wide">Traitements en cours<textarea name="traitementsEnCours"></textarea></label>
+                    <button>Ajouter le patient</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/patients">Actualiser la liste</button>
+                <pre class="results" aria-live="polite"></pre>
+            </section>
+
+            <section class="card module hidden" id="medecins">
+                <h2>Médecins</h2>
+                <form data-endpoint="/api/medecins">
+                    <label>Nom<input name="nom" required></label>
+                    <label>Prénom<input name="prenom" required></label>
+                    <label>Spécialité<select name="specialite" required>
+                        <option>Cardiologie</option><option>Pneumologie</option><option>Neurologie</option>
+                        <option>Gastro-entérologie</option><option>Endocrinologie</option><option>Dermatologie</option>
+                        <option>Rhumatologie</option><option>Psychiatrie</option><option>Néphrologie</option><option>Orthopédie</option>
+                    </select></label>
+                    <label>Tarif<input name="tarif" type="number" min="0" step="0.01" value="0"></label>
+                    <label>Disponible<select name="disponible"><option value="true">Oui</option><option value="false">Non</option></select></label>
+                    <button>Ajouter le médecin</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/medecins">Actualiser la liste</button>
+                <pre class="results" aria-live="polite"></pre>
+            </section>
+
+            <section class="card module hidden" id="consultations">
+                <h2>Consultations</h2>
+                <form data-endpoint="/api/consultations">
+                    <label>Patient<select name="patientId" data-options="/api/patients" data-label="nom,prenom" required></select></label>
+                    <label>Médecin généraliste<select name="medecinGeneralisteId" data-options="/api/medecins" data-label="nom,prenom" required></select></label>
+                    <label class="wide">Symptômes<textarea name="symptomes" required></textarea></label>
+                    <label class="wide">Observations cliniques<textarea name="observationsCliniques"></textarea></label>
+                    <button>Créer la consultation</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/consultations">Actualiser la liste</button>
+                <pre class="results" aria-live="polite"></pre>
+                <h3>Compte rendu et décision du généraliste</h3>
+                <form data-action="/api/consultations/{id}" data-method="PUT">
+                    <label>Identifiant de la consultation<input name="id" type="number" min="1" required></label>
+                    <label>Symptômes<input name="symptomes" required></label>
+                    <label>Diagnostic<input name="diagnostic"></label>
+                    <label>Traitement<input name="traitement"></label>
+                    <label>Observations<textarea name="observationsCliniques"></textarea></label>
+                    <label>Décision<select name="statut"><option>EN_COURS</option><option>TERMINEE</option></select></label>
+                    <button>Enregistrer le compte rendu</button>
+                </form>
+                <div class="message" role="status"></div>
+            </section>
+
+            <section class="card module hidden" id="creneaux">
+                <h2>Créneaux de rendez-vous</h2>
+                <form data-endpoint="/api/creneaux">
+                    <label>Médecin<select name="medecinId" data-options="/api/medecins" data-label="nom,prenom" required></select></label>
+                    <label>Date et heure<input name="dateHeure" type="datetime-local" required></label>
+                    <button>Créer le créneau</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/creneaux">Actualiser les créneaux</button>
+                <pre class="results" aria-live="polite"></pre>
+                <p class="muted">Les identifiants des créneaux sont affichés ci-dessus. Un créneau sélectionné dans une demande d'expertise est réservé automatiquement.</p>
+            </section>
+
+            <section class="card module hidden" id="admissions">
+                <h2>Admissions et triage</h2>
+                <form data-endpoint="/api/admissions">
+                    <label>Patient<select name="patientId" data-options="/api/patients" data-label="nom,prenom" required></select></label>
+                    <label>Infirmier/ère<input name="infirmier" required></label>
+                    <label>Tension artérielle<input name="tensionArterielle" placeholder="120/80" required></label>
+                    <label>Fréquence cardiaque<input name="frequenceCardiaque" type="number" min="1" required></label>
+                    <label>Température (°C)<input name="temperature" type="number" min="1" step="0.1" required></label>
+                    <label>Fréquence respiratoire<input name="frequenceRespiratoire" type="number" min="1" required></label>
+                    <label>Poids (kg)<input name="poids" type="number" min="0.1" step="0.1" required></label>
+                    <label>Taille (cm)<input name="taille" type="number" min="0.1" step="0.1" required></label>
+                    <button>Enregistrer l'admission</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/admissions">Actualiser la liste</button>
+                <pre class="results" aria-live="polite"></pre>
+                <form data-action="/api/admissions/{id}/statut">
+                    <label>Identifiant de l'admission<input name="id" type="number" min="1" required></label>
+                    <label>Nouveau statut<select name="statut"><option>EN_ATTENTE_MEDECIN_GENERALISTE</option><option>EN_COURS</option><option>ORIENTEE_SPECIALISTE</option><option>TERMINEE</option><option>ANNULEE</option></select></label>
+                    <button>Mettre à jour le statut</button>
+                </form>
+                <div class="message" role="status"></div>
+            </section>
+
+            <section class="card module hidden" id="expertises">
+                <h2>Demandes d'expertise</h2>
+                <form data-endpoint="/api/demandes-expertise">
+                    <label>Consultation<select name="consultationId" data-options="/api/consultations" data-label="id,symptomes" required></select></label>
+                    <label>Spécialité<select name="specialite">
+                        <option>Cardiologie</option><option>Pneumologie</option><option>Neurologie</option>
+                        <option>Gastro-entérologie</option><option>Endocrinologie</option><option>Dermatologie</option>
+                        <option>Rhumatologie</option><option>Psychiatrie</option><option>Néphrologie</option><option>Orthopédie</option>
+                    </select></label>
+                    <label>Médecin spécialiste<select name="medecinSpecialisteId" required></select></label>
+                    <label>Créneau disponible<select name="creneauId" required></select></label>
+                    <label>Priorité<select name="priorite"><option>URGENTE</option><option selected>NORMALE</option><option>NON URGENTE</option></select></label>
+                    <label>Mode<select name="modeEchange"><option>ASYNCHRONE</option><option>SYNCHRONE</option></select></label>
+                    <label class="wide">Question<textarea name="question" required></textarea></label>
+                    <button>Envoyer la demande</button>
+                </form>
+                <div class="message" role="status"></div>
+                <button class="secondary refresh" data-endpoint="/api/demandes-expertise">Actualiser la liste</button>
+                <pre class="results" aria-live="polite"></pre>
+                <form data-action="/api/demandes-expertise/{id}/reponse">
+                    <label>Identifiant de la demande<input name="id" type="number" min="1" required></label>
+                    <label class="wide">Avis du spécialiste<textarea name="avisSpecialiste" required></textarea></label>
+                    <button>Enregistrer la réponse</button>
+                </form>
+                <div class="message" role="status"></div>
+            </section>
+
+            <section class="card module hidden" id="users">
+                <h2>Comptes utilisateurs (administrateur)</h2>
+                <form data-endpoint="/api/auth/users">
+                    <label>Nom<input name="nom" required></label>
+                    <label>Prénom<input name="prenom" required></label>
+                    <label>Nom d'utilisateur<input name="username" required></label>
+                    <label>Mot de passe temporaire<input name="password" type="password" minlength="8" required></label>
+                    <label>Rôle<select name="role"><option>MEDECIN_GENERALISTE</option><option>MEDECIN_SPECIALISTE</option><option>INFIRMIER</option><option>ADMIN</option></select></label>
+                    <button>Créer le compte</button>
+                </form>
+                <div class="message" role="status"></div>
+                <p class="muted">La liste des comptes et les mots de passe ne sont jamais exposés dans l'interface.</p>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        let csrfToken = "";
+        const $ = (selector, parent = document) => parent.querySelector(selector);
+        const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
+
+        async function api(path, options = {}) {
+            const headers = { ...(options.headers || {}) };
+            if (options.body) headers["Content-Type"] = "application/json";
+            if (options.method && options.method !== "GET") headers["X-CSRF-TOKEN"] = csrfToken;
+            const response = await fetch(path, { credentials: "same-origin", ...options, headers });
+            const body = response.status === 204 ? null : await response.json();
+            if (!response.ok) throw new Error(body?.message || body?.error || `Erreur HTTP ${response.status}`);
+            return body;
+        }
+
+        function showMessage(element, text, failed = false) {
+            element.textContent = text;
+            element.classList.toggle("error", failed);
+        }
+
+        async function refreshSession() {
+            const state = await api("/api/auth/status");
+            csrfToken = state.csrfToken;
+            $("#auth").classList.toggle("hidden", Boolean(state.user));
+            $("#app").classList.toggle("hidden", !state.user);
+            $("#account").classList.toggle("hidden", !state.user);
+            if (state.user) {
+                $("#userName").textContent = `${state.user.prenom || ""} ${state.user.nom || state.user.username} (${state.user.role})`;
+                $("#usersTab").classList.toggle("hidden", state.user.role !== "ADMIN");
+                await loadOptions();
+                await updateExpertiseCount();
+            } else {
+                const setup = !state.initialized;
+                $("#authTitle").textContent = setup ? "Créer le compte administrateur" : "Connexion";
+                $("#authHelp").textContent = setup
+                    ? "Première utilisation : créez le compte administrateur qui initialisera la base."
+                    : "Connectez-vous pour accéder aux dossiers médicaux.";
+                $$(".setup-only").forEach((item) => item.classList.toggle("hidden", !setup));
+                $("#authSubmit").textContent = setup ? "Créer le compte" : "Se connecter";
+            }
+        }
+
+        async function loadOptions() {
+            for (const select of $$("select[data-options]")) {
+                const values = await api(select.dataset.options);
+                const labelKeys = select.dataset.label.split(",");
+                select.replaceChildren(new Option("— Sélectionner —", ""));
+                values.forEach((item) => {
+                    const label = labelKeys.map((key) => item[key] ?? "").join(" — ");
+                    select.add(new Option(label, item.id));
+                });
+            }
+            await loadSpecialists();
+        }
+
+        async function loadSpecialists() {
+            const panel = $("#expertises");
+            const specialty = $('select[name="specialite"]', panel).value;
+            const doctors = await api(`/api/medecins?specialite=${encodeURIComponent(specialty)}`);
+            const doctorSelect = $('select[name="medecinSpecialisteId"]', panel);
+            doctorSelect.replaceChildren(new Option("— Sélectionner un spécialiste —", ""));
+            doctors.forEach((doctor) => {
+                const label = `${doctor.nom} ${doctor.prenom} — ${doctor.tarif} € — ${doctor.disponible ? "Disponible" : "Indisponible"}`;
+                doctorSelect.add(new Option(label, doctor.id));
+            });
+            await loadSpecialistSlots();
+        }
+
+        async function loadSpecialistSlots() {
+            const panel = $("#expertises");
+            const doctorId = $('select[name="medecinSpecialisteId"]', panel).value;
+            const slotSelect = $('select[name="creneauId"]', panel);
+            slotSelect.replaceChildren(new Option("— Sélectionner un créneau —", ""));
+            if (!doctorId) return;
+
+            const slots = await api(`/api/creneaux?medecinId=${encodeURIComponent(doctorId)}`);
+            slots.forEach((slot) => {
+                const future = new Date(slot.dateHeure).getTime() > Date.now();
+                const disponible = slot.disponible && future;
+                const etat = disponible ? "Disponible" : future ? "Réservé" : "Passé";
+                const option = new Option(`${slot.dateHeure.replace("T", " ")} — ${etat}`, slot.id);
+                option.disabled = !disponible;
+                slotSelect.add(option);
+            });
+        }
+
+        async function updateExpertiseCount() {
+            const demandes = await api("/api/demandes-expertise?statut=EN_ATTENTE_AVIS_SPECIALISTE");
+            $("#expertiseCount").textContent = demandes.length;
+        }
+
+        async function loadList(endpoint, panel) {
+            let url = endpoint;
+            if (endpoint === "/api/creneaux") {
+                const medecinId = $('select[name="medecinId"]', panel).value;
+                if (!medecinId) throw new Error("Sélectionnez d'abord un médecin.");
+                url = `${endpoint}?medecinId=${encodeURIComponent(medecinId)}`;
+            }
+            const result = await api(url);
+            $(".results", panel).textContent = JSON.stringify(result, null, 2);
+        }
+
+        $("#authForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const data = Object.fromEntries(new FormData(form));
+            const setup = !$(".setup-only").classList.contains("hidden");
+            showMessage($("#authMessage"), "");
+            try {
+                await api(setup ? "/api/auth/bootstrap" : "/api/auth/login", {
+                    method: "POST", body: JSON.stringify(data)
+                });
+                await refreshSession();
+            } catch (error) {
+                showMessage($("#authMessage"), error.message, true);
+            }
+        });
+
+        $("#logout").addEventListener("click", async () => {
+            try {
+                await api("/api/auth/logout", { method: "POST" });
+                await refreshSession();
+            } catch (error) {
+                window.alert(error.message);
+            }
+        });
+
+        $('select[name="specialite"]', $("#expertises")).addEventListener("change", () => {
+            loadSpecialists().catch((error) => showMessage($(".message", $("#expertises")), error.message, true));
+        });
+
+        $('select[name="medecinSpecialisteId"]', $("#expertises")).addEventListener("change", () => {
+            loadSpecialistSlots().catch((error) => showMessage($(".message", $("#expertises")), error.message, true));
+        });
+
+        $$("nav [data-panel]").forEach((button) => button.addEventListener("click", async () => {
+            $$(".module").forEach((panel) => panel.classList.toggle("hidden", panel.id !== button.dataset.panel));
+            if (button.dataset.panel === "expertises") {
+                try {
+                    await updateExpertiseCount();
+                    $(".results", $("#expertises")).textContent = JSON.stringify(
+                        await api("/api/demandes-expertise"), null, 2);
+                } catch (error) {
+                    showMessage($(".message", $("#expertises")), error.message, true);
+                }
+            }
+        }));
+
+        $$("form[data-action]").forEach((form) => form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const panel = form.closest(".module");
+            const message = form.nextElementSibling;
+            const data = Object.fromEntries(new FormData(form));
+            const endpoint = form.dataset.action.replace("{id}", encodeURIComponent(data.id));
+            delete data.id;
+            try {
+                const result = await api(endpoint, {
+                    method: form.dataset.method || "POST",
+                    body: JSON.stringify(data)
+                });
+                showMessage(message, `Mise à jour enregistrée (${result.statut || "OK"}).`);
+                form.reset();
+                const refresh = $(".refresh", panel);
+                if (refresh) await loadList(refresh.dataset.endpoint, panel);
+            } catch (error) {
+                showMessage(message, error.message, true);
+            }
+        }));
+
+        $$("form[data-endpoint]").forEach((form) => form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const panel = form.closest(".module");
+            const message = $(".message", panel);
+            const data = Object.fromEntries(new FormData(form));
+            for (const [key, value] of Object.entries(data)) {
+                if (value === "") delete data[key];
+                else if (["tarif", "patientId", "medecinGeneralisteId", "medecinId", "consultationId",
+                    "medecinSpecialisteId", "creneauId", "frequenceCardiaque", "temperature",
+                    "frequenceRespiratoire", "poids", "taille"].includes(key)) data[key] = Number(value);
+                else if (key === "disponible") data[key] = value === "true";
+            }
+            showMessage(message, "");
+            try {
+                const created = await api(form.dataset.endpoint, { method: "POST", body: JSON.stringify(data) });
+                showMessage(message, `Enregistré (identifiant ${created.id ?? "—"}).`);
+                form.reset();
+                await loadOptions();
+                await updateExpertiseCount();
+                const refresh = $(".refresh", panel);
+                if (refresh) await loadList(refresh.dataset.endpoint, panel);
+            } catch (error) {
+                showMessage(message, error.message, true);
+            }
+        }));
+
+        $$(".refresh").forEach((button) => button.addEventListener("click", async () => {
+            const panel = button.closest(".module");
+            try {
+                await loadList(button.dataset.endpoint, panel);
+            } catch (error) {
+                showMessage($(".message", panel), error.message, true);
+            }
+        }));
+
+        refreshSession().catch((error) => showMessage($("#authMessage"), error.message, true));
+        window.setInterval(() => {
+            if (!$("#app").classList.contains("hidden")) {
+                updateExpertiseCount().catch((error) => console.error(error));
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

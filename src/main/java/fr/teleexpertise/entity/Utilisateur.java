@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 
 @Entity
 public class Utilisateur {
@@ -14,6 +15,7 @@ public class Utilisateur {
 
     private String nom;
     private String prenom;
+    @Column(nullable = false, unique = true)
     private String username;
     private String password;
     private String role;

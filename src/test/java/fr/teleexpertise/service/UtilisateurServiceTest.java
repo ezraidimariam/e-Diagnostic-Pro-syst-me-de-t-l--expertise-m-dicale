@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import fr.teleexpertise.TeleexpertiseApplication;
 import fr.teleexpertise.dao.UtilisateurDao;
@@ -22,9 +23,10 @@ class UtilisateurServiceTest {
 
     @Test
     void authentifier_should_return_user_when_credentials_are_valid() {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setUsername("formatrice");
-        utilisateur.setPassword("1234");
+        utilisateur.setPassword(encoder.encode("1234"));
         utilisateur.setRole("FORMATRICE");
         utilisateurDao.save(utilisateur);
 
@@ -38,9 +40,10 @@ class UtilisateurServiceTest {
 
     @Test
     void authentifier_should_throw_when_password_is_wrong() {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setUsername("formatrice");
-        utilisateur.setPassword("1234");
+        utilisateur.setPassword(encoder.encode("1234"));
         utilisateur.setRole("FORMATRICE");
         utilisateurDao.save(utilisateur);
 

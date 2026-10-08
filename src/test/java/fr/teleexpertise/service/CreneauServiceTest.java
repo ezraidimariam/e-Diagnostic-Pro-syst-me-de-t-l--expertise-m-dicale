@@ -70,7 +70,7 @@ class CreneauServiceTest {
 
         creneauDao.saveAll(List.of(creneau1, creneau2, creneauPasse, creneauIndisponible, autreCreneau));
 
-        CreneauService service = new CreneauService(creneauDao);
+        CreneauService service = new CreneauService(creneauDao, medecinDao);
 
         List<Creneau> result = service.listerCreneauxDisponibles(medecin.getId());
 
@@ -91,7 +91,7 @@ class CreneauServiceTest {
         creneau.setDisponible(true);
         creneau = creneauDao.save(creneau);
 
-        CreneauService service = new CreneauService(creneauDao);
+        CreneauService service = new CreneauService(creneauDao, medecinDao);
 
         Creneau result = service.reserver(creneau.getId());
 
@@ -111,7 +111,7 @@ class CreneauServiceTest {
         creneau.setDisponible(false);
         creneau = creneauDao.save(creneau);
 
-        CreneauService service = new CreneauService(creneauDao);
+        CreneauService service = new CreneauService(creneauDao, medecinDao);
         Long creneauId = creneau.getId();
 
         assertThrows(IllegalStateException.class, () -> service.reserver(creneauId));
@@ -129,7 +129,7 @@ class CreneauServiceTest {
         creneau.setDisponible(false);
         creneau = creneauDao.save(creneau);
 
-        CreneauService service = new CreneauService(creneauDao);
+        CreneauService service = new CreneauService(creneauDao, medecinDao);
 
         Creneau result = service.annulerReservation(creneau.getId());
 

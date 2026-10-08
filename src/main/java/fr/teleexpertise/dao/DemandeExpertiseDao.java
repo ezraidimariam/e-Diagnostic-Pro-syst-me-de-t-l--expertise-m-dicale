@@ -9,4 +9,6 @@ import fr.teleexpertise.entity.DemandeExpertise;
 public interface DemandeExpertiseDao extends JpaRepository<DemandeExpertise, Long> {
 
     List<DemandeExpertise> findByStatut(String statut);
+
+    List<DemandeExpertise> findByConsultation_IdOrderByIdDesc(Long consultationId);
 }
