@@ -72,7 +72,7 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès réservé à l'administrateur.");
         }
         Utilisateur user = utilisateurService.creerUtilisateur(credentials.nom(), credentials.prenom(),
-                credentials.username(), credentials.password(), credentials.role());
+                credentials.username(), credentials.password(), credentials.role(), credentials.medecinId());
         return toSessionUser(user);
     }
 
@@ -107,13 +107,14 @@ public class AuthController {
 
     private SessionUser toSessionUser(Utilisateur user) {
         return new SessionUser(user.getId(), user.getNom(), user.getPrenom(),
-                user.getUsername(), user.getRole());
+                user.getUsername(), user.getRole(), user.getMedecin() == null ? null : user.getMedecin().getId());
     }
 
-    public record Credentials(String nom, String prenom, String username, String password, String role) {
+    public record Credentials(String nom, String prenom, String username, String password, String role,
+            Long medecinId) {
     }
 
-    public record SessionUser(Long id, String nom, String prenom, String username, String role) {
+    public record SessionUser(Long id, String nom, String prenom, String username, String role, Long medecinId) {
     }
 
     public record AuthStatus(boolean initialized, SessionUser user, String csrfToken) {

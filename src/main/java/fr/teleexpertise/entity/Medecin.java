@@ -17,6 +17,7 @@ public class Medecin {
     private String specialite;
     private double tarif;
     private boolean disponible;
+    private int dureeConsultationMinutes = 30;
 
     public Medecin() {
     }
@@ -67,5 +68,13 @@ public class Medecin {
 
     public void setDisponible(boolean disponible) {
         this.disponible = disponible;
+    }
+
+    public int getDureeConsultationMinutes() {
+        return dureeConsultationMinutes;
+    }
+
+    public void setDureeConsultationMinutes(int dureeConsultationMinutes) {
+        this.dureeConsultationMinutes = dureeConsultationMinutes;
     }
 }

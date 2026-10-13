@@ -1,5 +1,7 @@
 package fr.teleexpertise.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +16,7 @@ public class Patient {
 
     private String nom;
     private String prenom;
+    private LocalDate dateNaissance;
     private String telephone;
     private String adresse;
     private String numeroSecuriteSociale;
@@ -47,6 +50,14 @@ public class Patient {
 
     public void setPrenom(String prenom) {
         this.prenom = prenom;
+    }
+
+    public LocalDate getDateNaissance() {
+        return dateNaissance;
+    }
+
+    public void setDateNaissance(LocalDate dateNaissance) {
+        this.dateNaissance = dateNaissance;
     }
 
     public String getTelephone() {

@@ -22,8 +22,8 @@ public class Admission {
     private int frequenceCardiaque;
     private double temperature;
     private int frequenceRespiratoire;
-    private double poids;
-    private double taille;
+    private Double poids;
+    private Double taille;
 
     @ManyToOne
     private Patient patient;
@@ -95,19 +95,19 @@ public class Admission {
         this.frequenceRespiratoire = frequenceRespiratoire;
     }
 
-    public double getPoids() {
+    public Double getPoids() {
         return poids;
     }
 
-    public void setPoids(double poids) {
+    public void setPoids(Double poids) {
         this.poids = poids;
     }
 
-    public double getTaille() {
+    public Double getTaille() {
         return taille;
     }
 
-    public void setTaille(double taille) {
+    public void setTaille(Double taille) {
         this.taille = taille;
     }
 

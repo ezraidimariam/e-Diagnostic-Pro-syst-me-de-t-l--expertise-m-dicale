@@ -1,12 +1,18 @@
 package fr.teleexpertise.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 
 @Entity
 public class Consultation {
@@ -21,6 +27,12 @@ public class Consultation {
     private String diagnostic;
     private String traitement;
     private String statut = "EN_COURS";
+    private BigDecimal tarifDh = new BigDecimal("150.00");
+
+    @ElementCollection
+    @CollectionTable(name = "consultation_actes_techniques",
+            joinColumns = @JoinColumn(name = "consultation_id"))
+    private List<ActeTechnique> actesTechniques = new ArrayList<>();
 
     @ManyToOne
     private Patient patient;
@@ -77,6 +89,22 @@ public class Consultation {
 
     public void setTraitement(String traitement) {
         this.traitement = traitement;
+    }
+
+    public BigDecimal getTarifDh() {
+        return tarifDh;
+    }
+
+    public void setTarifDh(BigDecimal tarifDh) {
+        this.tarifDh = tarifDh;
+    }
+
+    public List<ActeTechnique> getActesTechniques() {
+        return actesTechniques;
+    }
+
+    public void setActesTechniques(List<ActeTechnique> actesTechniques) {
+        this.actesTechniques = actesTechniques == null ? new ArrayList<>() : new ArrayList<>(actesTechniques);
     }
 
     public String getStatut() {

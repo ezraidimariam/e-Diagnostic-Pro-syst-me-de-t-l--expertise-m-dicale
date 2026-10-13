@@ -1,6 +1,7 @@
 package fr.teleexpertise.controller;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,8 +28,9 @@ public class AdmissionController {
     }
 
     @GetMapping
-    public List<Admission> lister(@RequestParam(required = false) String statut) {
-        return admissionService.lister(statut);
+    public List<Admission> lister(@RequestParam(required = false) String statut,
+            @RequestParam(required = false) LocalDate date) {
+        return admissionService.lister(statut, date);
     }
 
     @GetMapping("/{id}")
@@ -39,7 +41,10 @@ public class AdmissionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Admission creer(@RequestBody AdmissionRequest request) {
-        return admissionService.creer(request.patientId(), request.infirmier(), request.tensionArterielle(),
+        return admissionService.accueillir(request.patientId(), request.nom(), request.prenom(),
+                request.dateNaissance(), request.numeroSecuriteSociale(), request.telephone(),
+                request.adresse(), request.mutuelle(), request.antecedents(), request.allergies(),
+                request.traitementsEnCours(), request.infirmier(), request.tensionArterielle(),
                 request.frequenceCardiaque(), request.temperature(), request.frequenceRespiratoire(),
                 request.poids(), request.taille());
     }
@@ -49,8 +54,11 @@ public class AdmissionController {
         return admissionService.changerStatut(id, request.statut());
     }
 
-    public record AdmissionRequest(Long patientId, String infirmier, String tensionArterielle,
-            int frequenceCardiaque, double temperature, int frequenceRespiratoire, double poids, double taille) {
+    public record AdmissionRequest(Long patientId, String nom, String prenom, LocalDate dateNaissance,
+            String numeroSecuriteSociale, String telephone, String adresse, String mutuelle,
+            String antecedents, String allergies, String traitementsEnCours,
+            String infirmier, String tensionArterielle, int frequenceCardiaque,
+            double temperature, int frequenceRespiratoire, Double poids, Double taille) {
     }
 
     public record StatusRequest(String statut) {

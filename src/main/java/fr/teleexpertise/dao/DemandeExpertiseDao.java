@@ -11,4 +11,10 @@ public interface DemandeExpertiseDao extends JpaRepository<DemandeExpertise, Lon
     List<DemandeExpertise> findByStatut(String statut);
 
     List<DemandeExpertise> findByConsultation_IdOrderByIdDesc(Long consultationId);
+
+    List<DemandeExpertise> findByConsultation_Id(Long consultationId);
+
+    List<DemandeExpertise> findByMedecinSpecialiste_Id(Long medecinId);
+
+    List<DemandeExpertise> findByConsultation_MedecinGeneraliste_Id(Long medecinId);
 }

@@ -2,6 +2,8 @@ package fr.teleexpertise.controller;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +38,8 @@ public class MedecinController {
     }
 
     @GetMapping("/{id}")
-    public Medecin obtenir(@PathVariable Long id) {
+    public Medecin obtenir(@PathVariable Long id, HttpServletRequest request) {
+        verifierProfilSpecialiste(id, request);
         return charger(id);
     }
 
@@ -49,7 +52,9 @@ public class MedecinController {
     }
 
     @PutMapping("/{id}")
-    public Medecin modifier(@PathVariable Long id, @RequestBody Medecin donnees) {
+    public Medecin modifier(@PathVariable Long id, @RequestBody Medecin donnees,
+            HttpServletRequest request) {
+        verifierProfilSpecialiste(id, request);
         Medecin medecin = charger(id);
         valider(donnees);
         medecin.setNom(donnees.getNom().trim());
@@ -57,6 +62,7 @@ public class MedecinController {
         medecin.setSpecialite(donnees.getSpecialite().trim());
         medecin.setTarif(donnees.getTarif());
         medecin.setDisponible(donnees.isDisponible());
+        medecin.setDureeConsultationMinutes(30);
         return medecinDao.save(medecin);
     }
 
@@ -75,8 +81,19 @@ public class MedecinController {
         if (medecin.getNom() == null || medecin.getNom().isBlank()
                 || medecin.getPrenom() == null || medecin.getPrenom().isBlank()
                 || medecin.getSpecialite() == null || medecin.getSpecialite().isBlank()
-                || !Double.isFinite(medecin.getTarif()) || medecin.getTarif() < 0) {
+                || !Double.isFinite(medecin.getTarif()) || medecin.getTarif() < 0
+                || medecin.getDureeConsultationMinutes() != 30) {
             throw new IllegalArgumentException("Les informations du médecin sont invalides.");
+        }
+    }
+
+    private void verifierProfilSpecialiste(Long id, HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        AuthController.SessionUser user =
+                (AuthController.SessionUser) session.getAttribute("utilisateurConnecte");
+        if ("MEDECIN_SPECIALISTE".equals(user.role()) && !user.medecinId().equals(id)) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Vous ne pouvez modifier que votre profil médecin.");
         }
     }
 }

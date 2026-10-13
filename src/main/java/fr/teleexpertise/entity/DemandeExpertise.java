@@ -20,6 +20,7 @@ public class DemandeExpertise {
     private String statut = "EN_ATTENTE_AVIS_SPECIALISTE";
     private String modeEchange;
     private String avisSpecialiste;
+    private String recommandations;
     private LocalDateTime dateReponse;
 
     @ManyToOne
@@ -80,6 +81,14 @@ public class DemandeExpertise {
 
     public void setAvisSpecialiste(String avisSpecialiste) {
         this.avisSpecialiste = avisSpecialiste;
+    }
+
+    public String getRecommandations() {
+        return recommandations;
+    }
+
+    public void setRecommandations(String recommandations) {
+        this.recommandations = recommandations;
     }
 
     public LocalDateTime getDateReponse() {

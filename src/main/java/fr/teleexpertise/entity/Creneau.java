@@ -17,6 +17,8 @@ public class Creneau {
 
     private LocalDateTime dateHeure;
     private boolean disponible = true;
+    private int dureeMinutes = 30;
+    private boolean archive;
 
     @ManyToOne
     private Medecin medecin;
@@ -46,6 +48,22 @@ public class Creneau {
 
     public void setDisponible(boolean disponible) {
         this.disponible = disponible;
+    }
+
+    public int getDureeMinutes() {
+        return dureeMinutes;
+    }
+
+    public void setDureeMinutes(int dureeMinutes) {
+        this.dureeMinutes = dureeMinutes;
+    }
+
+    public boolean isArchive() {
+        return archive;
+    }
+
+    public void setArchive(boolean archive) {
+        this.archive = archive;
     }
 
     public Medecin getMedecin() {

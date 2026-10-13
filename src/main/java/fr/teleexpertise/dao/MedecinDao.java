@@ -13,7 +13,8 @@ public interface MedecinDao extends JpaRepository<Medecin, Long> {
     default List<Medecin> rechercherParSpecialiteTrieeParTarif(String specialite) {
         return findAll().stream()
                 .filter(medecin -> medecin.getSpecialite() != null
-                        && medecin.getSpecialite().equalsIgnoreCase(specialite))
+                        && medecin.getSpecialite().equalsIgnoreCase(specialite)
+                        && medecin.isDisponible())
                 .sorted(Comparator.comparingDouble(Medecin::getTarif))
                 .collect(Collectors.toList());
     }

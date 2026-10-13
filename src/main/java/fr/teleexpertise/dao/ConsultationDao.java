@@ -11,4 +11,6 @@ public interface ConsultationDao extends JpaRepository<Consultation, Long> {
     List<Consultation> findByStatut(String statut);
 
     List<Consultation> findByPatient_IdOrderByDateHeureDesc(Long patientId);
+
+    List<Consultation> findByMedecinGeneraliste_IdOrderByDateHeureDesc(Long medecinId);
 }

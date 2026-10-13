@@ -21,7 +21,7 @@
         button.danger { background: #a63333; }
         input, select, textarea { width: 100%; border: 1px solid #cbd6e2; border-radius: 7px; padding: .65rem; background: #fff; }
         label { display: grid; gap: .35rem; font-size: .9rem; }
-        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .85rem; }
+        form, .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .85rem; }
         form button { align-self: end; }
         .wide { grid-column: 1 / -1; }
         .muted { color: #5c6e82; }
@@ -57,12 +57,12 @@
 
         <section id="app" class="hidden">
             <nav class="tabs" aria-label="Sections">
-                <button data-panel="patients">Patients</button>
-                <button data-panel="medecins">Médecins</button>
-                <button data-panel="consultations">Consultations</button>
-                <button data-panel="creneaux">Créneaux</button>
-                <button data-panel="admissions">Admissions</button>
-                <button data-panel="expertises">Demandes d'expertise (<span id="expertiseCount">0</span>)</button>
+                <button data-panel="patients" data-roles="ADMIN,INFIRMIER,MEDECIN_GENERALISTE">Patients</button>
+                <button data-panel="medecins" data-roles="ADMIN,MEDECIN_GENERALISTE,MEDECIN_SPECIALISTE">Médecins</button>
+                <button data-panel="consultations" data-roles="ADMIN,MEDECIN_GENERALISTE">Consultations</button>
+                <button data-panel="creneaux" data-roles="ADMIN,MEDECIN_GENERALISTE,MEDECIN_SPECIALISTE">Créneaux</button>
+                <button data-panel="admissions" data-roles="ADMIN,INFIRMIER,MEDECIN_GENERALISTE">Admissions</button>
+                <button data-panel="expertises" data-roles="ADMIN,MEDECIN_GENERALISTE,MEDECIN_SPECIALISTE">Demandes d'expertise (<span id="expertiseCount">0</span>)</button>
                 <button data-panel="users" id="usersTab" class="hidden">Comptes</button>
             </nav>
 
@@ -71,9 +71,10 @@
                 <form data-endpoint="/api/patients">
                     <label>Nom<input name="nom" required></label>
                     <label>Prénom<input name="prenom" required></label>
+                    <label>Date de naissance<input name="dateNaissance" type="date" required></label>
                     <label>Téléphone<input name="telephone"></label>
                     <label>Adresse<input name="adresse"></label>
-                    <label>N° sécurité sociale<input name="numeroSecuriteSociale"></label>
+                    <label>N° sécurité sociale<input name="numeroSecuriteSociale" required></label>
                     <label>Mutuelle<input name="mutuelle"></label>
                     <label>Antécédents<textarea name="antecedents"></textarea></label>
                     <label>Allergies<textarea name="allergies"></textarea></label>
@@ -81,6 +82,11 @@
                     <button>Ajouter le patient</button>
                 </form>
                 <div class="message" role="status"></div>
+                <form id="patientSearchForm">
+                    <label>N° sécurité sociale à rechercher<input name="numeroSecuriteSociale" required></label>
+                    <button type="submit">Rechercher un patient</button>
+                </form>
+                <div id="patientSearchResults" class="message" role="status"></div>
                 <button class="secondary refresh" data-endpoint="/api/patients">Actualiser la liste</button>
                 <pre class="results" aria-live="polite"></pre>
             </section>
@@ -96,8 +102,20 @@
                         <option>Rhumatologie</option><option>Psychiatrie</option><option>Néphrologie</option><option>Orthopédie</option>
                     </select></label>
                     <label>Tarif<input name="tarif" type="number" min="0" step="0.01" value="0"></label>
+                    <label>Durée moyenne<input name="dureeConsultationMinutes" type="number" value="30" readonly></label>
                     <label>Disponible<select name="disponible"><option value="true">Oui</option><option value="false">Non</option></select></label>
                     <button>Ajouter le médecin</button>
+                </form>
+                <form id="doctorProfileForm" class="hidden" data-action="/api/medecins/{id}" data-method="PUT">
+                    <h3>Mon profil professionnel</h3>
+                    <label>Identifiant<input name="id" type="number" min="1" readonly required></label>
+                    <label>Nom<input name="nom" required></label>
+                    <label>Prénom<input name="prenom" required></label>
+                    <label>Spécialité<input name="specialite" required></label>
+                    <label>Tarif (DH)<input name="tarif" type="number" min="0" step="0.01" required></label>
+                    <label>Disponible<select name="disponible"><option value="true">Oui</option><option value="false">Non</option></select></label>
+                    <label>Durée de consultation (minutes)<input name="dureeConsultationMinutes" type="number" value="30" readonly></label>
+                    <button>Enregistrer mon profil</button>
                 </form>
                 <div class="message" role="status"></div>
                 <button class="secondary refresh" data-endpoint="/api/medecins">Actualiser la liste</button>
@@ -127,6 +145,19 @@
                     <button>Enregistrer le compte rendu</button>
                 </form>
                 <div class="message" role="status"></div>
+                <h3>Actes médicaux et coût total</h3>
+                <form id="acteTechniqueForm">
+                    <label>Identifiant de la consultation<input name="consultationId" type="number" min="1" required></label>
+                    <label>Acte<select name="type">
+                        <option>Radiographie</option><option>Échographie</option><option>IRM</option>
+                        <option>Électrocardiogramme</option><option>Acte dermatologique (laser)</option>
+                        <option>Fond d'œil</option><option>Analyse de sang</option><option>Analyse d'urine</option>
+                    </select></label>
+                    <label>Tarif de l'acte (DH)<input name="tarifDh" type="number" min="0" step="0.01" required></label>
+                    <button>Ajouter l'acte et calculer le coût</button>
+                </form>
+                <button id="refreshCost" class="secondary" type="button">Recalculer le coût</button>
+                <pre id="costResult" aria-live="polite"></pre>
             </section>
 
             <section class="card module hidden" id="creneaux">
@@ -136,6 +167,11 @@
                     <label>Date et heure<input name="dateHeure" type="datetime-local" required></label>
                     <button>Créer le créneau</button>
                 </form>
+                <form id="planningForm">
+                    <label>Médecin spécialiste<select name="medecinId" data-options="/api/medecins" data-label="nom,prenom" required></select></label>
+                    <label>Date du planning<input name="date" type="date" required></label>
+                    <button>Générer les créneaux de 30 min (09:00–12:00)</button>
+                </form>
                 <div class="message" role="status"></div>
                 <button class="secondary refresh" data-endpoint="/api/creneaux">Actualiser les créneaux</button>
                 <pre class="results" aria-live="polite"></pre>
@@ -144,6 +180,34 @@
 
             <section class="card module hidden" id="admissions">
                 <h2>Admissions et triage</h2>
+                <h3>Accueil infirmier : créer un patient ou retrouver un dossier</h3>
+                <form id="patientIntakeForm" data-endpoint="/api/admissions">
+                    <label>Patient déjà enregistré<select name="patientId" data-options="/api/patients" data-label="nom,prenom"></select></label>
+                    <div id="newPatientFields" class="wide">
+                        <h4>Nouveau dossier patient (si aucun patient existant n'est sélectionné)</h4>
+                        <div class="form-grid">
+                            <label>Nom<input name="nom" required></label>
+                            <label>Prénom<input name="prenom" required></label>
+                            <label>Date de naissance<input name="dateNaissance" type="date" required></label>
+                            <label>N° sécurité sociale<input name="numeroSecuriteSociale" required></label>
+                            <label>Téléphone<input name="telephone"></label>
+                            <label>Adresse<input name="adresse"></label>
+                            <label>Mutuelle<input name="mutuelle"></label>
+                            <label>Antécédents<textarea name="antecedents"></textarea></label>
+                            <label>Allergies<textarea name="allergies"></textarea></label>
+                            <label>Traitements en cours<textarea name="traitementsEnCours"></textarea></label>
+                        </div>
+                    </div>
+                    <label>Infirmier/ère<input name="infirmier" required></label>
+                    <label>Tension artérielle<input name="tensionArterielle" placeholder="120/80" required></label>
+                    <label>Fréquence cardiaque<input name="frequenceCardiaque" type="number" min="1" required></label>
+                    <label>Température (°C)<input name="temperature" type="number" min="1" step="0.1" required></label>
+                    <label>Fréquence respiratoire<input name="frequenceRespiratoire" type="number" min="1" required></label>
+                    <label>Poids (kg, si nécessaire)<input name="poids" type="number" min="0.1" step="0.1"></label>
+                    <label>Taille (cm, si nécessaire)<input name="taille" type="number" min="0.1" step="0.1"></label>
+                    <button>Enregistrer et ajouter à la file d'attente</button>
+                </form>
+                <div class="message" role="status"></div>
                 <form data-endpoint="/api/admissions">
                     <label>Patient<select name="patientId" data-options="/api/patients" data-label="nom,prenom" required></select></label>
                     <label>Infirmier/ère<input name="infirmier" required></label>
@@ -151,12 +215,13 @@
                     <label>Fréquence cardiaque<input name="frequenceCardiaque" type="number" min="1" required></label>
                     <label>Température (°C)<input name="temperature" type="number" min="1" step="0.1" required></label>
                     <label>Fréquence respiratoire<input name="frequenceRespiratoire" type="number" min="1" required></label>
-                    <label>Poids (kg)<input name="poids" type="number" min="0.1" step="0.1" required></label>
-                    <label>Taille (cm)<input name="taille" type="number" min="0.1" step="0.1" required></label>
+                    <label>Poids (kg, si nécessaire)<input name="poids" type="number" min="0.1" step="0.1"></label>
+                    <label>Taille (cm, si nécessaire)<input name="taille" type="number" min="0.1" step="0.1"></label>
                     <button>Enregistrer l'admission</button>
                 </form>
                 <div class="message" role="status"></div>
                 <button class="secondary refresh" data-endpoint="/api/admissions">Actualiser la liste</button>
+                <label>Date des admissions affichées<input id="admissionDateFilter" type="date"></label>
                 <pre class="results" aria-live="polite"></pre>
                 <form data-action="/api/admissions/{id}/statut">
                     <label>Identifiant de l'admission<input name="id" type="number" min="1" required></label>
@@ -183,11 +248,17 @@
                     <button>Envoyer la demande</button>
                 </form>
                 <div class="message" role="status"></div>
+                <form id="expertiseFilterForm">
+                    <label>Statut<select name="statut"><option value="">Tous</option><option>EN_ATTENTE_AVIS_SPECIALISTE</option><option>REPONDUE</option><option>ANNULEE</option></select></label>
+                    <label>Priorité<select name="priorite"><option value="">Toutes</option><option>URGENTE</option><option>NORMALE</option><option>NON URGENTE</option></select></label>
+                    <button>Filtrer les demandes</button>
+                </form>
                 <button class="secondary refresh" data-endpoint="/api/demandes-expertise">Actualiser la liste</button>
                 <pre class="results" aria-live="polite"></pre>
                 <form data-action="/api/demandes-expertise/{id}/reponse">
                     <label>Identifiant de la demande<input name="id" type="number" min="1" required></label>
                     <label class="wide">Avis du spécialiste<textarea name="avisSpecialiste" required></textarea></label>
+                    <label class="wide">Recommandations<textarea name="recommandations"></textarea></label>
                     <button>Enregistrer la réponse</button>
                 </form>
                 <div class="message" role="status"></div>
@@ -200,7 +271,8 @@
                     <label>Prénom<input name="prenom" required></label>
                     <label>Nom d'utilisateur<input name="username" required></label>
                     <label>Mot de passe temporaire<input name="password" type="password" minlength="8" required></label>
-                    <label>Rôle<select name="role"><option>MEDECIN_GENERALISTE</option><option>MEDECIN_SPECIALISTE</option><option>INFIRMIER</option><option>ADMIN</option></select></label>
+                    <label>Rôle<select name="role" id="newUserRole"><option>MEDECIN_GENERALISTE</option><option>MEDECIN_SPECIALISTE</option><option>INFIRMIER</option><option>ADMIN</option></select></label>
+                    <label id="doctorProfileLabel">Profil médecin associé<select name="medecinId" data-options="/api/medecins" data-label="nom,prenom"></select></label>
                     <button>Créer le compte</button>
                 </form>
                 <div class="message" role="status"></div>
@@ -211,6 +283,7 @@
 
     <script>
         let csrfToken = "";
+        let currentUser = null;
         const $ = (selector, parent = document) => parent.querySelector(selector);
         const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
 
@@ -231,6 +304,7 @@
 
         async function refreshSession() {
             const state = await api("/api/auth/status");
+            currentUser = state.user;
             csrfToken = state.csrfToken;
             $("#auth").classList.toggle("hidden", Boolean(state.user));
             $("#app").classList.toggle("hidden", !state.user);
@@ -238,7 +312,34 @@
             if (state.user) {
                 $("#userName").textContent = `${state.user.prenom || ""} ${state.user.nom || state.user.username} (${state.user.role})`;
                 $("#usersTab").classList.toggle("hidden", state.user.role !== "ADMIN");
+                $$("nav [data-roles]").forEach((button) => {
+                    const allowedRoles = button.dataset.roles.split(",");
+                    button.classList.toggle("hidden", !allowedRoles.includes(state.user.role));
+                });
+                $("#planningForm").classList.toggle("hidden", state.user.role !== "ADMIN"
+                    && state.user.role !== "MEDECIN_SPECIALISTE");
+                $("#acteTechniqueForm").classList.toggle("hidden", state.user.role !== "ADMIN"
+                    && state.user.role !== "MEDECIN_GENERALISTE");
+                $("#refreshCost").classList.toggle("hidden", state.user.role !== "ADMIN"
+                    && state.user.role !== "MEDECIN_GENERALISTE");
+                $$("form[data-endpoint], form[data-action]").forEach((form) => {
+                    const panel = form.closest(".module");
+                    if (panel) {
+                        form.classList.toggle("hidden", !canEditPanel(state.user.role, panel.id, form));
+                    }
+                });
                 await loadOptions();
+                if (state.user.role === "MEDECIN_SPECIALISTE") {
+                    const doctor = await api(`/api/medecins/${state.user.medecinId}`);
+                    const form = $("#doctorProfileForm");
+                    for (const key of ["id", "nom", "prenom", "specialite", "tarif",
+                        "disponible", "dureeConsultationMinutes"]) {
+                        form.elements[key].value = doctor[key];
+                    }
+                }
+                if (state.user.role !== "MEDECIN_SPECIALISTE") {
+                    await loadSpecialists();
+                }
                 await updateExpertiseCount();
             } else {
                 const setup = !state.initialized;
@@ -251,18 +352,66 @@
             }
         }
 
+        function canEditPanel(role, panelId, form) {
+            if (role === "ADMIN") return true;
+            if (panelId === "patients") return false;
+            if (panelId === "admissions") return role === "INFIRMIER";
+            if (panelId === "medecins") return role === "MEDECIN_SPECIALISTE"
+                && form.dataset.action === "/api/medecins/{id}";
+            if (panelId === "consultations") return role === "MEDECIN_GENERALISTE";
+            if (panelId === "creneaux") {
+                return role === "MEDECIN_SPECIALISTE" && form.dataset.endpoint === "/api/creneaux";
+            }
+            if (panelId === "expertises") {
+                return (role === "MEDECIN_GENERALISTE" && form.dataset.endpoint === "/api/demandes-expertise")
+                    || (role === "MEDECIN_SPECIALISTE" && form.dataset.action?.endsWith("/reponse"));
+            }
+            return false;
+        }
+
+        function updatePatientIntakeFields() {
+            const existingPatient = Boolean($('#patientIntakeForm [name="patientId"]').value);
+            const fields = $("#newPatientFields");
+            fields.classList.toggle("hidden", existingPatient);
+            for (const name of ["nom", "prenom", "dateNaissance", "numeroSecuriteSociale"]) {
+                fields.querySelector(`[name="${name}"]`).required = !existingPatient;
+            }
+        }
+
+        $('#patientIntakeForm [name="patientId"]').addEventListener("change", updatePatientIntakeFields);
+        updatePatientIntakeFields();
+
         async function loadOptions() {
             for (const select of $$("select[data-options]")) {
+                const form = select.closest("form");
+                if (form?.classList.contains("hidden")) continue;
+                const panel = select.closest(".module");
+                const panelButton = panel && $(`nav [data-panel="${panel.id}"]`);
+                if (panelButton?.classList.contains("hidden")) continue;
                 const values = await api(select.dataset.options);
                 const labelKeys = select.dataset.label.split(",");
                 select.replaceChildren(new Option("— Sélectionner —", ""));
-                values.forEach((item) => {
+                const visibleValues = currentUser?.role === "MEDECIN_SPECIALISTE"
+                    && select.name === "medecinId"
+                    ? values.filter((item) => item.id === currentUser.medecinId)
+                    : values;
+                visibleValues.forEach((item) => {
                     const label = labelKeys.map((key) => item[key] ?? "").join(" — ");
                     select.add(new Option(label, item.id));
                 });
             }
-            await loadSpecialists();
         }
+
+        function updateDoctorRequirement() {
+            const requiresDoctor = ["MEDECIN_GENERALISTE", "MEDECIN_SPECIALISTE"].includes($("#newUserRole").value);
+            $("#doctorProfileLabel").classList.toggle("hidden", !requiresDoctor);
+            const profile = $('select[name="medecinId"]', $("#users"));
+            profile.required = requiresDoctor;
+            if (!requiresDoctor) profile.value = "";
+        }
+
+        $("#newUserRole").addEventListener("change", updateDoctorRequirement);
+        updateDoctorRequirement();
 
         async function loadSpecialists() {
             const panel = $("#expertises");
@@ -271,7 +420,7 @@
             const doctorSelect = $('select[name="medecinSpecialisteId"]', panel);
             doctorSelect.replaceChildren(new Option("— Sélectionner un spécialiste —", ""));
             doctors.forEach((doctor) => {
-                const label = `${doctor.nom} ${doctor.prenom} — ${doctor.tarif} € — ${doctor.disponible ? "Disponible" : "Indisponible"}`;
+                const label = `${doctor.nom} ${doctor.prenom} — ${doctor.tarif} DH — ${doctor.disponible ? "Disponible" : "Indisponible"}`;
                 doctorSelect.add(new Option(label, doctor.id));
             });
             await loadSpecialistSlots();
@@ -296,6 +445,10 @@
         }
 
         async function updateExpertiseCount() {
+            if ($("#expertises").classList.contains("hidden")
+                    && $('nav [data-panel="expertises"]').classList.contains("hidden")) {
+                return;
+            }
             const demandes = await api("/api/demandes-expertise?statut=EN_ATTENTE_AVIS_SPECIALISTE");
             $("#expertiseCount").textContent = demandes.length;
         }
@@ -306,6 +459,8 @@
                 const medecinId = $('select[name="medecinId"]', panel).value;
                 if (!medecinId) throw new Error("Sélectionnez d'abord un médecin.");
                 url = `${endpoint}?medecinId=${encodeURIComponent(medecinId)}`;
+            } else if (endpoint === "/api/admissions" && $("#admissionDateFilter").value) {
+                url = `${endpoint}?date=${encodeURIComponent($("#admissionDateFilter").value)}`;
             }
             const result = await api(url);
             $(".results", panel).textContent = JSON.stringify(result, null, 2);
@@ -327,6 +482,22 @@
             }
         });
 
+        $("#patientSearchForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const numero = new FormData(event.currentTarget).get("numeroSecuriteSociale");
+            const results = $("#patientSearchResults");
+            try {
+                const patients = await api(`/api/patients?numeroSecuriteSociale=${encodeURIComponent(numero)}`);
+                results.textContent = patients.length
+                    ? patients.map((patient) =>
+                        `${patient.prenom} ${patient.nom} — ${patient.numeroSecuriteSociale}`).join("\n")
+                    : "Aucun patient trouvé. Vous pouvez créer son dossier ci-dessus.";
+                results.classList.remove("error");
+            } catch (error) {
+                showMessage(results, error.message, true);
+            }
+        });
+
         $("#logout").addEventListener("click", async () => {
             try {
                 await api("/api/auth/logout", { method: "POST" });
@@ -342,6 +513,57 @@
 
         $('select[name="medecinSpecialisteId"]', $("#expertises")).addEventListener("change", () => {
             loadSpecialistSlots().catch((error) => showMessage($(".message", $("#expertises")), error.message, true));
+        });
+
+        $("#acteTechniqueForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(event.currentTarget));
+            const id = Number(data.consultationId);
+            try {
+                await api(`/api/consultations/${id}/actes-techniques`, {
+                    method: "POST",
+                    body: JSON.stringify({ type: data.type, tarifDh: Number(data.tarifDh) })
+                });
+                $("#costResult").textContent = JSON.stringify(await api(`/api/consultations/${id}/cout`), null, 2);
+            } catch (error) {
+                showMessage($("#costResult"), error.message, true);
+            }
+        });
+
+        $("#refreshCost").addEventListener("click", async () => {
+            const id = Number($('#acteTechniqueForm [name="consultationId"]').value);
+            try {
+                $("#costResult").textContent = JSON.stringify(await api(`/api/consultations/${id}/cout`), null, 2);
+            } catch (error) {
+                showMessage($("#costResult"), error.message, true);
+            }
+        });
+
+        $("#planningForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(event.currentTarget));
+            data.medecinId = Number(data.medecinId);
+            try {
+                const slots = await api("/api/creneaux/planning", {
+                    method: "POST",
+                    body: JSON.stringify(data)
+                });
+                showMessage($(".message", $("#creneaux")), `${slots.length} créneau(x) ajouté(s).`);
+                await loadList("/api/creneaux", $("#creneaux"));
+            } catch (error) {
+                showMessage($(".message", $("#creneaux")), error.message, true);
+            }
+        });
+
+        $("#expertiseFilterForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const filters = new URLSearchParams(new FormData(event.currentTarget));
+            try {
+                $(".results", $("#expertises")).textContent = JSON.stringify(
+                    await api(`/api/demandes-expertise?${filters}`), null, 2);
+            } catch (error) {
+                showMessage($(".message", $("#expertises")), error.message, true);
+            }
         });
 
         $$("nav [data-panel]").forEach((button) => button.addEventListener("click", async () => {
@@ -387,7 +609,8 @@
                 if (value === "") delete data[key];
                 else if (["tarif", "patientId", "medecinGeneralisteId", "medecinId", "consultationId",
                     "medecinSpecialisteId", "creneauId", "frequenceCardiaque", "temperature",
-                    "frequenceRespiratoire", "poids", "taille"].includes(key)) data[key] = Number(value);
+                    "frequenceRespiratoire", "poids", "taille", "dureeConsultationMinutes"].includes(key)
+                    || (key === "medecinId" && value !== "")) data[key] = Number(value);
                 else if (key === "disponible") data[key] = value === "true";
             }
             showMessage(message, "");
@@ -395,6 +618,7 @@
                 const created = await api(form.dataset.endpoint, { method: "POST", body: JSON.stringify(data) });
                 showMessage(message, `Enregistré (identifiant ${created.id ?? "—"}).`);
                 form.reset();
+                if (form.id === "patientIntakeForm") updatePatientIntakeFields();
                 await loadOptions();
                 await updateExpertiseCount();
                 const refresh = $(".refresh", panel);

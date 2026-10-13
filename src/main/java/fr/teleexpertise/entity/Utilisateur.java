@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 
 @Entity
@@ -20,6 +22,10 @@ public class Utilisateur {
     private String password;
     private String role;
     private boolean actif = true;
+
+    @ManyToOne
+    @JoinColumn(name = "medecin_id")
+    private Medecin medecin;
 
     public Utilisateur() {
     }
@@ -78,5 +84,13 @@ public class Utilisateur {
 
     public void setActif(boolean actif) {
         this.actif = actif;
+    }
+
+    public Medecin getMedecin() {
+        return medecin;
+    }
+
+    public void setMedecin(Medecin medecin) {
+        this.medecin = medecin;
     }
 }
